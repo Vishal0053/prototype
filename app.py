@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import tempfile
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import PyPDFLoader
@@ -14,7 +15,10 @@ st.markdown("*Dismantling high-friction bottlenecks in Indian Retail Investing.*
 
 # 1. Technical Specificity: API Setup
 # Use st.secrets for secure deployment
-api_key = st.sidebar.text_input("Enter Gemini API Key", type="password")
+try:
+    api_key = st.secrets["gemini_api_key"]
+except KeyError:
+    api_key = st.sidebar.text_input("Enter Gemini API Key", type="password")
 
 if api_key:
     os.environ["GOOGLE_API_KEY"] = api_key
@@ -23,11 +27,13 @@ if api_key:
     uploaded_file = st.file_uploader("Upload a SEBI DRHP or Annual Report (PDF)", type="pdf")
     
     if uploaded_file:
-        with open("temp.pdf", "wb") as f:
-            f.write(uploaded_file.getbuffer())
+        # Use temporary file for Streamlit Cloud compatibility
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+            temp_file.write(uploaded_file.getbuffer())
+            temp_pdf_path = temp_file.name
         
         # Load and split document
-        loader = PyPDFLoader("temp.pdf")
+        loader = PyPDFLoader(temp_pdf_path)
         data = loader.load()
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
         chunks = text_splitter.split_documents(data)
@@ -54,5 +60,8 @@ if api_key:
                 
                 # Ethical Consideration & Transparency
                 st.caption("Note: This analysis is based strictly on the uploaded document to prevent hallucinations.")
+        
+        # Clean up temp file after processing
+        os.unlink(temp_pdf_path)
 else:
     st.warning("Please enter your Gemini API Key in the sidebar to begin.")
