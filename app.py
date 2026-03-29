@@ -5,7 +5,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmb
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain.chains import RetrievalQA
+from langchain_classic.chains.retrieval_qa.base import RetrievalQA
 
 # Page Config
 st.set_page_config(page_title="BharatInvest-Agent", layout="wide")
